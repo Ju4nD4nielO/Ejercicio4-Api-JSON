@@ -14,6 +14,15 @@ type Health struct {
 	Status string `json:"status"`
 }
 
+type Item struct {
+	ID        int    `json:"id"`
+	Title     string `json:"title"`
+	Console   string `json:"console"`
+	Year      int    `json:"year"`
+	Developer string `json:"developer"`
+	Genre     string `json:"genre"`
+}
+
 func main() {
 	http.HandleFunc("/api/ping", pingHandler)
 	http.HandleFunc("/api/hello", helloHandler)
