@@ -77,54 +77,129 @@ func itemsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// lee query parameter combinados
+	// query parameters
 	console := r.URL.Query().Get("console")
 	yearParam := r.URL.Query().Get("year")
 	idParam := r.URL.Query().Get("id")
 
-	id, err := strconv.Atoi(idParam)
+	// FILTROS
+	if console != "" || yearParam != "" {
 
-	// if err != nil {
-	// 	http.Error(w, "Invalid id", http.StatusBadRequest)
-	// 	return
-	// }
+		filtered := []Item{}
 
-	// aplicar filtros
-	filtered := []Item{}
+		for _, item := range items {
 
-	for _, item := range items {
-
-		if console != "" && item.Console != console {
-			continue
-		}
-
-		if yearParam != "" {
-			year, err := strconv.Atoi(yearParam)
-
-			if err == nil && item.Year != year {
+			if console != "" && item.Console != console {
 				continue
 			}
+
+			if yearParam != "" {
+				year, err := strconv.Atoi(yearParam)
+
+				if err == nil && item.Year != year {
+					continue
+				}
+			}
+
+			filtered = append(filtered, item)
 		}
 
-		filtered = append(filtered, item)
-	}
-
-	if console != "" || yearParam != "" {
 		writeJSON(w, http.StatusOK, filtered)
 		return
 	}
 
-	// buscar item
-	for _, item := range items {
-		if item.ID == id {
-			writeJSON(w, http.StatusOK, item)
+	// BUSCAR POR ID
+	if idParam != "" {
+
+		id, err := strconv.Atoi(idParam)
+
+		if err != nil {
+			http.Error(w, "Invalid id", http.StatusBadRequest)
 			return
 		}
+
+		for _, item := range items {
+			if item.ID == id {
+				writeJSON(w, http.StatusOK, item)
+				return
+			}
+		}
+
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
 	}
 
-	http.Error(w, "Item not found", http.StatusNotFound)
-
+	// SI NO HAY FILTROS NI ID → devolver todo
+	writeJSON(w, http.StatusOK, items)
 }
+
+// func itemsHandler(w http.ResponseWriter, r *http.Request) {
+
+// 	data, err := os.ReadFile("data/items.json")
+
+// 	if err != nil {
+// 		http.Error(w, "Could not read data", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	var items []Item
+
+// 	err = json.Unmarshal(data, &items)
+
+// 	if err != nil {
+// 		http.Error(w, "Invalid JSON", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	// lee query parameter combinados
+// 	console := r.URL.Query().Get("console")
+// 	yearParam := r.URL.Query().Get("year")
+// 	idParam := r.URL.Query().Get("id")
+
+// 	id, err := strconv.Atoi(idParam)
+
+// 	// if err != nil {
+// 	// 	http.Error(w, "Invalid id", http.StatusBadRequest)
+// 	// 	return
+// 	// }
+
+// 	// aplicar filtros
+// 	filtered := []Item{}
+
+// 	for _, item := range items {
+
+// 		if console != "" && item.Console != console {
+// 			continue
+// 		}
+
+// 		if yearParam != "" {
+// 			year, err := strconv.Atoi(yearParam)
+
+// 			if err == nil && item.Year != year {
+// 				continue
+// 			}
+// 		}
+
+// 		filtered = append(filtered, item)
+// 	}
+
+// 	if console != "" || yearParam != "" {
+// 		writeJSON(w, http.StatusOK, filtered)
+// 		return
+// 	}
+
+// 	// buscar item
+// 	for _, item := range items {
+// 		if item.ID == id {
+// 			writeJSON(w, http.StatusOK, item)
+// 			return
+// 		}
+// 	}
+
+// 	// SI NO HAY FILTROS NI ID → devolver todo
+// 	writeJSON(w, http.StatusOK, items)
+
+// }
 
 func createItemHandler(w http.ResponseWriter, r *http.Request) {
 
