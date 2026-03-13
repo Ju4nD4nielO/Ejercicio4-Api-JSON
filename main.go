@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Message struct {
@@ -26,9 +27,10 @@ type Item struct {
 func main() {
 	http.HandleFunc("/api/ping", pingHandler)
 	http.HandleFunc("/api/hello", helloHandler)
+	http.HandleFunc("/api/items", itemsHandler)
 
-	log.Println("JSON API running on :80")
-	log.Fatal(http.ListenAndServe(":80", nil))
+	log.Println("JSON API running on :24979")
+	log.Fatal(http.ListenAndServe(":24979", nil))
 }
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +52,27 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, response)
+}
+
+func itemsHandler(w http.ResponseWriter, r *http.Request) {
+
+	data, err := os.ReadFile("data/items.json")
+
+	if err != nil {
+		http.Error(w, "Could not read data", http.StatusInternalServerError)
+		return
+	}
+
+	var items []Item
+
+	err = json.Unmarshal(data, &items)
+
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, items)
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
