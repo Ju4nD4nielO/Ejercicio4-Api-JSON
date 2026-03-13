@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Message struct {
@@ -30,6 +31,8 @@ func main() {
 	http.HandleFunc("/api/hello", helloHandler)
 	http.HandleFunc("/api/items", itemsHandler)
 	http.HandleFunc("/api/items/create", createItemHandler)
+	http.HandleFunc("/api/items/", itemByIDHandler)
+	http.HandleFunc("/api/items/delete/", deleteItemHandler)
 
 	log.Println("JSON API running on :24979")
 	log.Fatal(http.ListenAndServe(":24979", nil))
@@ -74,19 +77,40 @@ func itemsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// lee query parameter
+	// lee query parameter combinados
+	console := r.URL.Query().Get("console")
+	yearParam := r.URL.Query().Get("year")
 	idParam := r.URL.Query().Get("id")
 
-	if idParam == "" {
-		writeJSON(w, http.StatusOK, items)
-		return
-	}
-
-	// convertir id a int
 	id, err := strconv.Atoi(idParam)
 
-	if err != nil {
-		http.Error(w, "Invalid id", http.StatusBadRequest)
+	// if err != nil {
+	// 	http.Error(w, "Invalid id", http.StatusBadRequest)
+	// 	return
+	// }
+
+	// aplicar filtros
+	filtered := []Item{}
+
+	for _, item := range items {
+
+		if console != "" && item.Console != console {
+			continue
+		}
+
+		if yearParam != "" {
+			year, err := strconv.Atoi(yearParam)
+
+			if err == nil && item.Year != year {
+				continue
+			}
+		}
+
+		filtered = append(filtered, item)
+	}
+
+	if console != "" || yearParam != "" {
+		writeJSON(w, http.StatusOK, filtered)
 		return
 	}
 
@@ -136,13 +160,132 @@ func createItemHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// generar nuevo id
 	newItem.ID = items[len(items)-1].ID + 1
 
-	// agregar a lista
 	items = append(items, newItem)
 
-	// convertir lista a JSON
+	updatedData, err := json.MarshalIndent(items, "", " ")
+
+	if err != nil {
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	err = os.WriteFile("data/items.json", updatedData, 0644)
+
+	if err != nil {
+		http.Error(w, "Error saving file", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, newItem)
+}
+
+func itemByIDHandler(w http.ResponseWriter, r *http.Request) {
+
+	data, err := os.ReadFile("data/items.json")
+
+	if err != nil {
+		http.Error(w, "Could not read data", http.StatusInternalServerError)
+		return
+	}
+
+	var items []Item
+
+	err = json.Unmarshal(data, &items)
+
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// extraer id del path
+	path := r.URL.Path
+	parts := strings.Split(path, "/")
+
+	if len(parts) < 4 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	idParam := parts[3]
+
+	id, err := strconv.Atoi(idParam)
+
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	for _, item := range items {
+		if item.ID == id {
+			writeJSON(w, http.StatusOK, item)
+			return
+		}
+	}
+
+	http.Error(w, "Item not found", http.StatusNotFound)
+}
+
+func deleteItemHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	data, err := os.ReadFile("data/items.json")
+
+	if err != nil {
+		http.Error(w, "Could not read data", http.StatusInternalServerError)
+		return
+	}
+
+	var items []Item
+
+	err = json.Unmarshal(data, &items)
+
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// obtener id del path
+	parts := strings.Split(r.URL.Path, "/")
+
+	if len(parts) < 4 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	idParam := parts[4]
+
+	id, err := strconv.Atoi(idParam)
+
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	// buscar y eliminar
+	index := -1
+
+	for i, item := range items {
+		if item.ID == id {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+
+	// eliminar elemento
+	items = append(items[:index], items[index+1:]...)
+
+	// convertir a JSON
 	updatedData, err := json.MarshalIndent(items, "", " ")
 
 	if err != nil {
@@ -158,7 +301,9 @@ func createItemHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, newItem)
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "Item deleted successfully",
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {

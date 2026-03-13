@@ -32,14 +32,6 @@
   "genre": "Action Adventure"
  },
  {
-  "id": 5,
-  "title": "The Wind Waker",
-  "console": "GameCube",
-  "year": 2002,
-  "developer": "Nintendo",
-  "genre": "Action Adventure"
- },
- {
   "id": 6,
   "title": "Twilight Princess",
   "console": "GameCube/Wii",
@@ -58,7 +50,7 @@
  {
   "id": 8,
   "title": "Breath of the Wild",
-  "console": "Switch/Wii U",
+  "console": "Switch",
   "year": 2017,
   "developer": "Nintendo",
   "genre": "Open World"

@@ -1,104 +1,150 @@
-# 07 - JSON API
+# Zelda JSON API (Go)
 
-En esta etapa el servidor deja completamente de renderizar HTML y pasa a ser una **API pura que devuelve JSON**.
+## Descripción
 
-Se elimina cualquier rastro de vistas, templates o archivos estáticos.
+Esta es una API REST que permite consultar y gestionar información sobre juegos de Zelda.
 
-El backend ahora actúa como un servicio que expone datos a través de endpoints HTTP.
+Los datos se almacenan en un archivo JSON.
 
----
+El servidor corre en el puerto correspondiente a mi número de carnet: 24979
 
-## 🎯 Objetivo de esta etapa
+# Estructura del proyecto
 
-Comprender:
-
-* Que un backend no necesariamente devuelve HTML
-* Que HTTP es solo el medio de transporte
-* Cómo devolver datos estructurados en formato JSON
-* Cómo usar el paquete estándar `encoding/json`
-* Cómo establecer correctamente headers y códigos de estado
-
----
-
-## 📁 Estructura del proyecto
-
-```
-.
+go-http
+│
 ├── main.go
-├── Dockerfile
-└── docker-compose.yml
-```
+├── data
+│   └── items.json
+└── README.md
 
-El proyecto ahora es mínimo: solo servidor y lógica de API.
+# Endpoints
 
----
 
-## 🧠 Qué cambió respecto a la rama anterior
+## Obtener un juego por query parameter
 
-Antes:
-
-* El servidor renderizaba vistas HTML
-* Existían templates y archivos estáticos
-
-Ahora:
-
-* El servidor solo expone endpoints bajo `/api/`
-* Las respuestas son JSON
-* No existe capa de presentación
-
-Se produce una separación clara entre backend y frontend.
-
----
-
-## 🧩 Ejemplo de endpoint
-
-Un endpoint típico:
+GET
 
 ```
-GET /api/hello
+/api/items?id=3
 ```
 
-Respuesta:
+Devuelve un juego específico según su ID.
+
+Ejemplo:
+
+```
+http://localhost:24979/api/items?id=3
+```
+
+
+## Obtener un juego por path parameter
+
+GET
+
+```
+/api/items/3
+```
+
+Devuelve un juego específico según su ID.
+
+
+## Crear un nuevo juego
+
+POST
+
+```
+/api/items/create
+```
+
+Body JSON de ejemplo:
 
 ```json
-{"message":"Hello from pure JSON API"}
+{
+ "title": "Oracle of Seasons",
+ "console": "Game Boy Color",
+ "year": 2001,
+ "developer": "Nintendo",
+ "genre": "Action Adventure"
+}
+```
+
+
+## Eliminar un juego
+
+DELETE
+
+```
+/api/items/delete/{id}
+```
+
+Ejemplo:
+
+```
+/api/items/delete/5
+```
+
+# Filtros disponibles
+
+La API permite filtrar resultados utilizando query parameters.
+
+Ejemplos:
+
+Filtrar por consola:
+
+```
+/api/items?console=Switch
+```
+
+Filtrar por año:
+
+```
+/api/items?year=1998
+```
+
+Filtrar por consola y año:
+
+```
+/api/items?console=Switch&year=2017
 ```
 
 ---
 
-## 🔎 Conceptos introducidos
+# Manejo de errores
 
-* Uso de `encoding/json` para serializar structs
-* Uso de struct tags para controlar el formato JSON
-* Manejo explícito de `Content-Type: application/json`
-* Envío de códigos de estado HTTP apropiados
+La API devuelve códigos HTTP apropiados en caso de error
 
----
+# Cómo ejecutar el proyecto
 
-## 🐳 Ejecución
+1. Clonar el repositorio
 
-El servidor escucha en el puerto 80 dentro del contenedor.
-
-En `docker-compose.yml` se mapea:
-
-```yaml
-ports:
-  - "8080:80"
+```
+git clone <repo>
 ```
 
-Probar con:
+2. Entrar al proyecto
 
-```bash
-curl http://localhost:8080/api/ping
-curl http://localhost:8080/api/hello
+```
+cd go-http
 ```
 
----
+3. Ejecutar el servidor
 
-## 📌 Qué estamos aprendiendo realmente
+```
+go run main.go
+```
 
-En esta etapa entendemos que:
+4. Abrir en navegador o Postman
 
-* Una API es simplemente un conjunto de endpoints HTTP
-* JSON es solo un formato de serialización
-* El backend puede existir sin interfaz gráfica
+```
+http://localhost:24979/api/items
+```
+
+# Evidencia de pruebas
+
+Las pruebas de los endpoints fueron realizadas utilizando **Postman** incluyendo:
+
+* GET de todos los elementos
+* GET con query parameters
+* POST exitoso
+* eliminación con DELETE
+* manejo de errores
