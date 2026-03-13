@@ -78,5 +78,13 @@
   "year": 1993,
   "developer": "Nintendo",
   "genre": "Action Adventure"
+ },
+ {
+  "id": 11,
+  "title": "Oracle of Ages",
+  "console": "Game Boy Color",
+  "year": 2001,
+  "developer": "Nintendo",
+  "genre": "Action Adventure"
  }
 ]
